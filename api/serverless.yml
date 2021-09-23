@@ -1,9 +1,12 @@
+org: defrosted
+app: fullstack-api
 service: fullstack-api
 
 variablesResolutionMode: 20210326
 useDotenv: true
 
 plugins:
+  - serverless-plugin-typescript
   - serverless-s3-sync
 custom:
   s3Sync:

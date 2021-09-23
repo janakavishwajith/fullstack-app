@@ -15,6 +15,7 @@ node_modules
 dist
 .idea
 build/
+.build/
 .env*
 .cache*
 .serverless

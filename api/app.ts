@@ -1,16 +1,17 @@
-const express = require('express')
+import * as express from "express"
+import * as passport from "passport"
+import * as serverless from "serverless-http"
+import { users } from "./controllers"
+import configurePassport from "./config/passport"
+import { NextFunction, Request, RequestHandler, Response } from "express"
+
 const app = express()
-const passport = require('passport')
-const serverless = require('serverless-http')
-const {
-  users
-} = require('./controllers')
 
 /**
  * Configure Passport
  */
 
-try { require('./config/passport')(passport) }
+try { configurePassport(passport) }
 catch (error) { console.log(error) }
 
 /**
@@ -18,7 +19,7 @@ catch (error) { console.log(error) }
  */
 
 // Enable CORS
-app.use(function (req, res, next) {
+app.use(function (req: Request, res: Response, next: NextFunction) {
   res.header('Access-Control-Allow-Origin', '*')
   res.header('Access-Control-Allow-Methods', '*')
   res.header('Access-Control-Allow-Headers', '*')
@@ -35,7 +36,7 @@ app.use(express.json())
 
 // Since Express doesn't support error handling of promises out of the box,
 // this handler enables that
-const asyncHandler = fn => (req, res, next) => {
+const asyncHandler = (fn: RequestHandler) => (req: Request, res: Response, next: NextFunction) => {
   return Promise
     .resolve(fn(req, res, next))
     .catch(next);
@@ -53,7 +54,7 @@ app.post(`/users/register`, asyncHandler(users.register))
 
 app.post(`/users/login`, asyncHandler(users.login))
 
-app.get(`/test/`, (req, res) => {
+app.get(`/test/`, (req: Request, res: Response) => {
   res.status(200).send('Request received')
 })
 
@@ -67,16 +68,16 @@ app.post(`/user`, passport.authenticate('jwt', { session: false }), asyncHandler
  * Routes - Catch-All
  */
 
-app.get(`/*`, (req, res) => {
+app.get(`/*`, (req: Request, res: Response) => {
   res.status(404).send('Route not found')
 })
 
 /**
  * Error Handler
  */
-app.use(function (err, req, res, next) {
+app.use(function (err: Error, req: Request, res: Response, _next: NextFunction) {
   console.error(err)
   res.status(500).json({ error: `Internal Serverless Error - "${err.message}"` })
 })
 
-module.exports.handler = serverless(app)
+export const handler = serverless(app)
