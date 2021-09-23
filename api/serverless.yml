@@ -1,19 +1,129 @@
-component: express
-name: api
+service: fullstack-api
 
-inputs:
-  # Express application source code.
-  src: ./
-  # Permissions required for the AWS Lambda function to interact with other resources
-  roleName: ${output:permissions.name}
-  # Enable this when you want to set a custom domain.
-  # domain: api.${env:domain}
-  # Environment variables
+variablesResolutionMode: 20210326
+useDotenv: true
+
+plugins:
+  - serverless-s3-sync
+custom:
+  s3Sync:
+    - bucketName: 'serverless-frontend-cdn-bucket-${sls:stage}'
+      localDir: '../site/build'
+
+provider:
+  name: aws
+  runtime: nodejs12.x
   region: eu-central-1
-  env:
-    # AWS DynamoDB Table name. Needed for the code to access it.
-    db: ${output:database.name}
-    # AWS DynamoDB Table Index name. Needed for the code to access it.
-    dbIndex1: ${output:database.indexes.gsi1.name}
-    # A secret token to sign the JWT tokens with.
-    tokenSecret: ${env:tokenSecret} # Change to secret via environment variable: ${env:tokenSecret}
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - dynamodb:Query
+        - dynamodb:Scan
+        - dynamodb:GetItem
+        - dynamodb:PutItem
+        - dynamodb:UpdateItem
+        - dynamodb:DeleteItem
+      Resource:
+        - { "Fn::GetAtt": ["UsersDynamoDBTable", "Arn"] }
+    - Effect: Allow
+      Action:
+        - dynamodb:Query
+        - dynamodb:Scan
+      Resource:
+        - { "Fn::Sub": "${UsersDynamoDBTable.Arn}/index/*"}
+
+functions:
+  app:
+    handler: app.handler
+    events: 
+      - httpApi: '*'
+    environment:
+      db: 'users-table-${sls:stage}'
+      dbIndex1: 'gs1'
+      tokenSecret: '${env:tokenSecret}'
+
+resources:
+  Resources:
+    UsersDynamoDBTable:
+      Type: 'AWS::DynamoDB::Table'
+      Properties:
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: hk
+            AttributeType: S
+          - AttributeName: sk
+            AttributeType: S
+          - AttributeName: sk2
+            AttributeType: S
+        KeySchema:
+          - AttributeName: hk
+            KeyType: HASH
+          - AttributeName: sk
+            KeyType: RANGE
+        GlobalSecondaryIndexes:
+          - IndexName: 'gs1'
+            KeySchema:
+              - AttributeName: sk2
+                KeyType: HASH
+              - AttributeName: sk
+                KeyType: RANGE
+            Projection:
+              ProjectionType: ALL
+        TableName: 'users-table-${sls:stage}'
+    FrontendBucket:
+      Type: 'AWS::S3::Bucket'
+      Properties: 
+        BucketName: 'serverless-frontend-cdn-bucket-${sls:stage}'
+        WebsiteConfiguration:
+          IndexDocument: index.html
+          ErrorDocument: index.html
+    FrontendBucketReadPolicy:
+      Type: 'AWS::S3::BucketPolicy'
+      Properties:
+        Bucket: { "Ref": "FrontendBucket" }
+        PolicyDocument:
+          Statement:
+            - Action: 's3:GetObject'
+              Effect: Allow
+              Resource: { "Fn::Sub": "${FrontendBucket.Arn}/*" }
+              Principal:
+                CanonicalUser: { "Fn::GetAtt": [ "FrontendCloudfrontOriginAccessIdentity", "S3CanonicalUserId" ] }
+    FrontendCloudfrontOriginAccessIdentity:
+      Type: 'AWS::CloudFront::CloudFrontOriginAccessIdentity'
+      Properties:
+        CloudFrontOriginAccessIdentityConfig:
+          Comment: { "Ref": "FrontendBucket" }
+    FrontendCloudfront:
+      Type: 'AWS::CloudFront::Distribution'
+      Properties:
+        DistributionConfig:
+          CustomErrorResponses:
+            - ErrorCode: 403
+              ResponseCode: 200
+              ResponsePagePath: /index.html
+            - ErrorCode: 404
+              ResponseCode: 200
+              ResponsePagePath: /index.html
+          DefaultCacheBehavior:
+            AllowedMethods:
+              - GET
+              - HEAD
+              - OPTIONS
+            CachedMethods:
+              - GET
+              - HEAD
+              - OPTIONS
+            Compress: true
+            DefaultTTL: 3600
+            TargetOriginId: frontendS3Origin
+            ViewerProtocolPolicy: 'redirect-to-https'
+            ForwardedValues:
+              QueryString: false
+          Enabled: true
+          HttpVersion: http2
+          DefaultRootObject: index.html
+          Origins:
+            - DomainName: 'serverless-frontend-cdn-bucket-${sls:stage}.s3.eu-central-1.amazonaws.com'
+              Id: frontendS3Origin
+              S3OriginConfig:
+                OriginAccessIdentity: { "Fn::Sub": "origin-access-identity/cloudfront/${FrontendCloudfrontOriginAccessIdentity}" }

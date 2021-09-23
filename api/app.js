@@ -1,6 +1,7 @@
 const express = require('express')
 const app = express()
 const passport = require('passport')
+const serverless = require('serverless-http')
 const {
   users
 } = require('./controllers')
@@ -78,4 +79,4 @@ app.use(function (err, req, res, next) {
   res.status(500).json({ error: `Internal Serverless Error - "${err.message}"` })
 })
 
-module.exports = app
+module.exports.handler = serverless(app)
