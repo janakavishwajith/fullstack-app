@@ -39,7 +39,7 @@ export const register = async (req: Request, res: Response): Promise<void | Resp
   
     res.json({ message: 'Authentication successful', token })
   } catch (error) {
-    console.log(error)
+    console.error(error)
     return res.status(500)
       .json({ error: error.message })
   }
@@ -52,9 +52,15 @@ export const register = async (req: Request, res: Response): Promise<void | Resp
  * @param {*} next 
  */
 export const login = async (req: Request, res: Response, next: NextFunction): Promise<void | Response> => {
+  const { tokenSecret } = process.env
 
   let user: UserEntity | null = null
-  try { user = await users.getByEmail(req.body.email) }
+  try {
+    if(!tokenSecret)
+      throw new Error("Token secret is undefined")
+
+    user = await users.getByEmail(req.body.email) 
+  }
   catch (error) { return next(error) }
 
   if (!user) {
@@ -68,7 +74,7 @@ export const login = async (req: Request, res: Response, next: NextFunction): Pr
       .send({ error: 'Authentication failed. Wrong password.' })
   }
 
-  const token = jwt.sign(user, process.env.tokenSecret ?? "", {
+  const token = jwt.sign(user, tokenSecret, {
     expiresIn: 604800 // 1 week
   })
 
@@ -82,12 +88,6 @@ export const login = async (req: Request, res: Response, next: NextFunction): Pr
  * @param {*} _next 
  */
 export const get = async (req: Request, res: Response): Promise<void> => {
-  const user = users.convertToPublicFormat(req?.user as UserEntity)
+  const user = users.convertToPublicFormat(req.user as UserEntity)
   res.json({ user })
-}
-
-export default {
-  register,
-  login,
-  get,
 }
