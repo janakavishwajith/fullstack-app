@@ -67,7 +67,7 @@ export const getByEmail = async(email: string): Promise<UserEntity | null> => {
   const { db, AWS_REGION } = process.env
 
   const dynamodb = new AWS.DynamoDB({
-    region: process.env.AWS_REGION
+    region: AWS_REGION
   })
 
   // Validate
@@ -109,10 +109,10 @@ export const getByEmail = async(email: string): Promise<UserEntity | null> => {
  */
 
 export const getById = async (id: string): Promise<UserEntity | null> => {
-  const { db, AWS_REGION } = process.env
+  const { db, AWS_REGION, dbIndex1 } = process.env
 
   const dynamodb = new AWS.DynamoDB({
-    region: process.env.AWS_REGION
+    region: AWS_REGION
   })
 
   // Validate
@@ -126,7 +126,7 @@ export const getById = async (id: string): Promise<UserEntity | null> => {
   // Query
   const params: QueryInput = {
     TableName: db,
-    IndexName: process.env.dbIndex1,
+    IndexName: dbIndex1,
     KeyConditionExpression: 'sk2 = :sk2 and sk = :sk',
     ExpressionAttributeValues: { ':sk2': { S: id }, ':sk': { S: 'user' } }
   }
