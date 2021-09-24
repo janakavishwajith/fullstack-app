@@ -29,10 +29,7 @@ export const comparePassword = (candidatePassword: string, trustedPassword: stri
   return bcrypt.compareSync(candidatePassword, trustedPassword)
 }
 
-export const parseDynamoDbAttributeMap = (output: AttributeMap | null): Record<string, string> | null => {
-  if(!output)
-    return null
-
+export const parseDynamoDbAttributeMap = (output: AttributeMap): Record<string, string> => {
   const keys = Object.keys(output)
   const result: Record<string, string> = {}
   keys.forEach((key) => {
@@ -44,10 +41,4 @@ export const parseDynamoDbAttributeMap = (output: AttributeMap | null): Record<s
   })
 
   return result
-}
-
-export default {
-  hashPassword,
-  comparePassword,
-  validateEmailAddress
 }

@@ -2,15 +2,11 @@
  * Model: Users
  */
 
-import { DynamoDB } from 'aws-sdk'
+import AWS = require('aws-sdk')
 import { PutItemInput, QueryInput } from 'aws-sdk/clients/dynamodb'
 import { generate } from 'shortid'
 import { UserEntity, UserPublic } from '../types'
 import { validateEmailAddress, hashPassword, parseDynamoDbAttributeMap } from '../utils'
-
-const dynamodb = new DynamoDB({
-  region: process.env.AWS_REGION
-})
 
 /**
  * Register user
@@ -18,7 +14,11 @@ const dynamodb = new DynamoDB({
  * @param {string} user.password User password
  */
 export const register = async(user: UserEntity = {}): Promise<void> => {
-  const { db } = process.env
+  const { db, AWS_REGION } = process.env
+
+  const dynamodb = new AWS.DynamoDB({
+    region: AWS_REGION
+  })
 
   // Validate
   if(!db)
@@ -64,7 +64,11 @@ export const register = async(user: UserEntity = {}): Promise<void> => {
  */
 
 export const getByEmail = async(email: string): Promise<UserEntity | null> => {
-  const { db } = process.env
+  const { db, AWS_REGION } = process.env
+
+  const dynamodb = new AWS.DynamoDB({
+    region: process.env.AWS_REGION
+  })
 
   // Validate
   if(!db)
@@ -73,6 +77,7 @@ export const getByEmail = async(email: string): Promise<UserEntity | null> => {
   if (!email) {
     throw new Error(`"email" is required`)
   }
+
   if (!validateEmailAddress(email)) {
     throw new Error(`"${email}" is not a valid email address`)
   }
@@ -85,10 +90,12 @@ export const getByEmail = async(email: string): Promise<UserEntity | null> => {
   }
 
   const result = await dynamodb.query(params).promise()
-
-  const user = parseDynamoDbAttributeMap(result.Items && result.Items[0] ? result.Items[0] : null)
-  if(!user)
+  const attributes = result.Items && result.Items[0] ? result.Items[0] : null
+  if(!attributes)
     return null
+
+  const user = parseDynamoDbAttributeMap(attributes)
+  
 
   user.id = user.sk2
   user.email = user.hk
@@ -102,7 +109,11 @@ export const getByEmail = async(email: string): Promise<UserEntity | null> => {
  */
 
 export const getById = async (id: string): Promise<UserEntity | null> => {
-  const { db } = process.env
+  const { db, AWS_REGION } = process.env
+
+  const dynamodb = new AWS.DynamoDB({
+    region: process.env.AWS_REGION
+  })
 
   // Validate
   if(!db)
@@ -121,10 +132,11 @@ export const getById = async (id: string): Promise<UserEntity | null> => {
   }
 
   const result = await dynamodb.query(params).promise()
-
-  const user = parseDynamoDbAttributeMap(result.Items && result.Items[0] ? result.Items[0] : null)
-  if(!user)
+  const attributes = result.Items && result.Items[0] ? result.Items[0] : null
+  if(!attributes)
     return null
+
+  const user = parseDynamoDbAttributeMap(attributes)
   
   user.id = user.sk2
   user.email = user.hk
@@ -147,11 +159,4 @@ export const convertToPublicFormat = (user: UserEntity): UserPublic => {
   if (user.password) delete user.password
 
   return user
-}
-
-export default {
-  register,
-  getByEmail,
-  getById,
-  convertToPublicFormat,
 }

@@ -9,6 +9,10 @@
     "moduleResolution": "node",
     "lib": ["es2015"],
     "rootDir": "./",
+    "types": [
+      "node",
+      "jest"
+    ]
   },
   "include": [
     "**/*.ts",
@@ -17,7 +21,6 @@
   "exclude": [
     ".serverless",
     ".build",
-    "node_modules",
-    "**/*.test.ts"
+    "node_modules"
   ]
 }
