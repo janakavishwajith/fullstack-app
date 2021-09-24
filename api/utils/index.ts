@@ -2,7 +2,6 @@
  * Utils 
  */
 
-import { AttributeMap } from "aws-sdk/clients/dynamodb"
 import * as bcrypt from "bcryptjs"
 
 /**
@@ -27,18 +26,4 @@ export const hashPassword = (password: string): string => {
  */
 export const comparePassword = (candidatePassword: string, trustedPassword: string): boolean => {
   return bcrypt.compareSync(candidatePassword, trustedPassword)
-}
-
-export const parseDynamoDbAttributeMap = (output: AttributeMap): Record<string, string> => {
-  const keys = Object.keys(output)
-  const result: Record<string, string> = {}
-  keys.forEach((key) => {
-    const attribute = output[key]
-    if(attribute.S)
-      result[key] = attribute.S
-    else if(attribute.N)
-      result[key] = attribute.N
-  })
-
-  return result
 }

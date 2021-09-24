@@ -22,12 +22,12 @@ describe(".register()", () => {
 
   beforeEach(() => {
     AWSMock.setSDKInstance(AWS)
-    AWSMock.mock('DynamoDB', 'putItem', (params, cb) => cb(null, null))
+    AWSMock.mock('DynamoDB.DocumentClient', 'put', (params, cb) => cb(null, null))
   })
 
   afterEach(() => {
     process.env = { ...testEnv }
-    AWSMock.restore('DynamoDB', 'putItem')
+    AWSMock.restore('DynamoDB.DocumentClient', 'put')
   })
 
   const validTestUser: UserEntity = {
@@ -96,20 +96,18 @@ describe(".getByEmail()", () => {
   })
 
   const validateEmailAddressSpy = jest.spyOn(utils, 'validateEmailAddress')
-  const parseDynamoDbAttributeMapSpy = jest.spyOn(utils, 'parseDynamoDbAttributeMap')
 
   it("Returns null if user was not found", async () => {
     process.env.db = 'test'
 
     AWSMock.setSDKInstance(AWS)
-    AWSMock.mock('DynamoDB', 'query', (params, cb) => cb(null, {}))
+    AWSMock.mock('DynamoDB.DocumentClient', 'query', (params, cb) => cb(null, {}))
     validateEmailAddressSpy.mockImplementationOnce(() => true)
-    parseDynamoDbAttributeMapSpy.mockImplementationOnce((value) => value as Record<string, string>)
 
     const result = await getByEmail("test")
     expect(result).toBeNull()
 
-    AWSMock.restore('DynamoDB', 'query')
+    AWSMock.restore('DynamoDB.DocumentClient', 'query')
   })
 
   it("Returns user entity when found", async () => {
@@ -128,13 +126,12 @@ describe(".getByEmail()", () => {
     }
 
     AWSMock.setSDKInstance(AWS)
-    AWSMock.mock('DynamoDB', 'query', (params, cb) => cb(null, dynamoResponse))
-    parseDynamoDbAttributeMapSpy.mockImplementationOnce((value) => value as Record<string, string>)
+    AWSMock.mock('DynamoDB.DocumentClient', 'query', (params, cb) => cb(null, dynamoResponse))
 
     const result = await getByEmail(testUserEntity.hk)
     expect(result).toEqual(expectedResult)
 
-    AWSMock.restore('DynamoDB', 'query')
+    AWSMock.restore('DynamoDB.DocumentClient', 'query')
   })
 
   it("Throws upon missing database env variable", async () => {
@@ -165,20 +162,18 @@ describe(".getById()", () => {
   })
 
   const validateEmailAddressSpy = jest.spyOn(utils, 'validateEmailAddress')
-  const parseDynamoDbAttributeMapSpy = jest.spyOn(utils, 'parseDynamoDbAttributeMap')
 
   it("Returns null if user was not found", async () => {
     process.env.db = 'test'
 
     AWSMock.setSDKInstance(AWS)
-    AWSMock.mock('DynamoDB', 'query', (params, cb) => cb(null, {}))
+    AWSMock.mock('DynamoDB.DocumentClient', 'query', (params, cb) => cb(null, {}))
     validateEmailAddressSpy.mockImplementationOnce(() => true)
-    parseDynamoDbAttributeMapSpy.mockImplementationOnce((value) => value as Record<string, string>)
 
     const result = await getById("test")
     expect(result).toBeNull()
 
-    AWSMock.restore('DynamoDB', 'query')
+    AWSMock.restore('DynamoDB.DocumentClient', 'query')
   })
 
   it("Returns user entity when found", async () => {
@@ -197,13 +192,12 @@ describe(".getById()", () => {
     }
 
     AWSMock.setSDKInstance(AWS)
-    AWSMock.mock('DynamoDB', 'query', (params, cb) => cb(null, dynamoResponse))
-    parseDynamoDbAttributeMapSpy.mockImplementationOnce((value) => value as Record<string, string>)
+    AWSMock.mock('DynamoDB.DocumentClient', 'query', (params, cb) => cb(null, dynamoResponse))
 
     const result = await getById(testUserEntity.hk)
     expect(result).toEqual(expectedResult)
 
-    AWSMock.restore('DynamoDB', 'query')
+    AWSMock.restore('DynamoDB.DocumentClient', 'query')
   })
 
   it("Throws upon missing database env variable", async () => {

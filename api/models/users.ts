@@ -3,10 +3,10 @@
  */
 
 import AWS = require('aws-sdk')
-import { PutItemInput, QueryInput } from 'aws-sdk/clients/dynamodb'
+import { DocumentClient } from 'aws-sdk/clients/dynamodb'
 import { generate } from 'shortid'
 import { UserEntity, UserPublic } from '../types'
-import { validateEmailAddress, hashPassword, parseDynamoDbAttributeMap } from '../utils'
+import { validateEmailAddress, hashPassword } from '../utils'
 
 /**
  * Register user
@@ -16,7 +16,7 @@ import { validateEmailAddress, hashPassword, parseDynamoDbAttributeMap } from '.
 export const register = async(user: UserEntity = {}): Promise<void> => {
   const { db, AWS_REGION } = process.env
 
-  const dynamodb = new AWS.DynamoDB({
+  const dynamodb = new AWS.DynamoDB.DocumentClient({
     region: AWS_REGION
   })
 
@@ -43,19 +43,19 @@ export const register = async(user: UserEntity = {}): Promise<void> => {
   user.password = hashPassword(user.password)
 
   // Save
-  const params: PutItemInput = {
+  const params: DocumentClient.PutItemInput = {
     TableName: db,
     Item: {
-      hk: { S: user.email },
-      sk: { S: 'user' },
-      sk2: { S: generate() },
-      createdAt: { N: Date.now().toString() },
-      updatedAt: { N: Date.now().toString() },
-      password: { S: user.password },
+      hk: user.email,
+      sk: 'user',
+      sk2: generate(),
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+      password: user.password,
     }
   }
 
-  await dynamodb.putItem(params).promise()
+  await dynamodb.put(params).promise()
 }
 
 /**
@@ -66,7 +66,7 @@ export const register = async(user: UserEntity = {}): Promise<void> => {
 export const getByEmail = async(email: string): Promise<UserEntity | null> => {
   const { db, AWS_REGION } = process.env
 
-  const dynamodb = new AWS.DynamoDB({
+  const dynamodb = new AWS.DynamoDB.DocumentClient({
     region: AWS_REGION
   })
 
@@ -83,19 +83,16 @@ export const getByEmail = async(email: string): Promise<UserEntity | null> => {
   }
 
   // Query
-  const params: QueryInput = {
+  const params: DocumentClient.QueryInput = {
     TableName: db,
     KeyConditionExpression: 'hk = :hk',
-    ExpressionAttributeValues: { ':hk': { S: email } }
+    ExpressionAttributeValues: { ':hk': email }
   }
 
   const result = await dynamodb.query(params).promise()
-  const attributes = result.Items && result.Items[0] ? result.Items[0] : null
-  if(!attributes)
-    return null
-
-  const user = parseDynamoDbAttributeMap(attributes)
-  
+  const user = result.Items && result.Items[0] ? result.Items[0] : null
+  if(!user)
+    return null  
 
   user.id = user.sk2
   user.email = user.hk
@@ -111,7 +108,7 @@ export const getByEmail = async(email: string): Promise<UserEntity | null> => {
 export const getById = async (id: string): Promise<UserEntity | null> => {
   const { db, AWS_REGION, dbIndex1 } = process.env
 
-  const dynamodb = new AWS.DynamoDB({
+  const dynamodb = new AWS.DynamoDB.DocumentClient({
     region: AWS_REGION
   })
 
@@ -124,19 +121,17 @@ export const getById = async (id: string): Promise<UserEntity | null> => {
   }
 
   // Query
-  const params: QueryInput = {
+  const params: DocumentClient.QueryInput = {
     TableName: db,
     IndexName: dbIndex1,
     KeyConditionExpression: 'sk2 = :sk2 and sk = :sk',
-    ExpressionAttributeValues: { ':sk2': { S: id }, ':sk': { S: 'user' } }
+    ExpressionAttributeValues: { ':sk2': id, ':sk': 'user' }
   }
 
   const result = await dynamodb.query(params).promise()
-  const attributes = result.Items && result.Items[0] ? result.Items[0] : null
-  if(!attributes)
+  const user = result.Items && result.Items[0] ? result.Items[0] : null
+  if(!user)
     return null
-
-  const user = parseDynamoDbAttributeMap(attributes)
   
   user.id = user.sk2
   user.email = user.hk

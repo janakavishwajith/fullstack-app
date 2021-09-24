@@ -1,8 +1,7 @@
 import * as utils from "./index"
 import * as bcrypt from "bcryptjs"
-import { AttributeMap } from "aws-sdk/clients/dynamodb"
 
-const { validateEmailAddress, hashPassword, comparePassword, parseDynamoDbAttributeMap } = utils
+const { validateEmailAddress, hashPassword, comparePassword } = utils
 
 describe(".validateEmailAddress()", () => {
   it("Returns true on valid emails", () => {
@@ -39,29 +38,5 @@ describe(".comparePassword()", () => {
   it("Returns false when passwords do not match", () => {
     const passwordHash = bcrypt.hashSync("test", 10)
     expect(comparePassword("test2", passwordHash)).toEqual(false)
-  })
-})
-
-describe(".parseDynamoDbAttributeMap()", () => {
-  it("Parses S and N attributes from an AttributeMap", () => {
-    const map: AttributeMap = {
-      string: { S: "test"},
-      number: { N: "1.01" }
-    }
-
-    const expectedResult = {
-      string: "test",
-      number: "1.01"
-    }
-
-    expect(parseDynamoDbAttributeMap(map)).toEqual(expectedResult)
-  })
-
-  it("Ignores unsupported attribute types", () => {
-    const map: AttributeMap = {
-      stringList: { SS: [ "test", "test2" ]}
-    }
-
-    expect(parseDynamoDbAttributeMap(map)).toEqual({})
   })
 })
