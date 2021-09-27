@@ -33,7 +33,7 @@ export const register = async (req: Request, res: Response): Promise<void | Resp
     if(!tokenSecret)
       throw new Error("Token secret is undefined")
 
-    const token = jwt.sign(user as Record<string, unknown>, tokenSecret, {
+    const token = jwt.sign(user, tokenSecret, {
       expiresIn: 604800 // 1 week
     })
   

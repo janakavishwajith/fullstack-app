@@ -1,8 +1,8 @@
-import * as userControllers from "./users"
-import { users as userModels } from "../models"
+import * as userControllers from "../../../controllers/users"
+import { users as userModels } from "../../../models"
 import { getMockReq, getMockRes } from "@jest-mock/express"
 import { generate } from "shortid"
-import * as utils from "../utils"
+import * as utils from "../../../utils"
 
 const testEnv = { ...process.env }
 

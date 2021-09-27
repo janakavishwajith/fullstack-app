@@ -1,4 +1,4 @@
-import * as utils from "./index"
+import * as utils from "../../../utils/index"
 import * as bcrypt from "bcryptjs"
 
 const { validateEmailAddress, hashPassword, comparePassword } = utils

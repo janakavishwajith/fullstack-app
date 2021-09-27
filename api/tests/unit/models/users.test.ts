@@ -1,9 +1,9 @@
 import AWS = require("aws-sdk")
 import AWSMock = require("aws-sdk-mock")
 
-import { UserEntity } from "../types"
-import * as users from "./users"
-import * as utils from '../utils'
+import { UserEntity } from "../../../types"
+import * as users from "../../../models/users"
+import * as utils from '../../../utils'
 import { generate } from "shortid"
 
 const testEnv = { ...process.env }

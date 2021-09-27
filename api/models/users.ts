@@ -92,7 +92,7 @@ export const getByEmail = async(email: string): Promise<UserEntity | null> => {
   const result = await dynamodb.query(params).promise()
   const user = result.Items && result.Items[0] ? result.Items[0] : null
   if(!user)
-    return null  
+    return null
 
   user.id = user.sk2
   user.email = user.hk
