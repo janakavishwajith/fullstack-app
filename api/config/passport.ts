@@ -3,9 +3,11 @@ import { Strategy, ExtractJwt, StrategyOptions } from 'passport-jwt'
 import { users } from '../models'
 
 const configure = (passport: PassportStatic): void => {
+  const { tokenSecret } = process.env
+
   const options: StrategyOptions = {
     jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
-    secretOrKey: process.env.tokenSecret || 'secret_j91jasf0j1asfkl' // Change this to only use your own secret token
+    secretOrKey: tokenSecret
   }
 
   passport.use(new Strategy(options, async (jwtPayload, done) => {

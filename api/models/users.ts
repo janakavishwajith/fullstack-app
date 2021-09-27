@@ -94,10 +94,7 @@ export const getByEmail = async(email: string): Promise<UserEntity | null> => {
   if(!user)
     return null
 
-  user.id = user.sk2
-  user.email = user.hk
-
-  return user
+  return formatUserEntity(user)
 }
 
 /**
@@ -132,17 +129,26 @@ export const getById = async (id: string): Promise<UserEntity | null> => {
   const user = result.Items && result.Items[0] ? result.Items[0] : null
   if(!user)
     return null
-  
-  user.id = user.sk2
-  user.email = user.hk
 
-  return user
+  return formatUserEntity(user)
 }
+
+/**
+ * Add id and email fields to UserEntity object
+ * @param {UserEntity} user
+ * @returns {UserEntity} Formatted user
+ */
+export const formatUserEntity = (user: UserEntity): UserEntity => ({
+  ...user,
+  id: user.sk2,
+  email: user.hk
+})
 
 /**
  * Convert user record to public format
  * This hides the keys used for the dynamodb's single table design and returns human-readable properties.
- * @param {*} user 
+ * @param {UserEntity} user
+ * @returns {UserPublic}
  */
 export const convertToPublicFormat = (user: UserEntity): UserPublic => {
   user.email = user.hk

@@ -236,3 +236,17 @@ describe(".convertToPublicFormat()", () => {
     expect(convertToPublicFormat({})).toEqual({})
   })
 })
+
+describe(".formatUserEntity()", () => {
+  const { formatUserEntity } = users
+
+  it("Parses and adds id and email fields to entity", () => {
+    const testObject = { ...testUserEntity }
+    
+    expect(formatUserEntity(testObject)).toEqual({
+      ...testUserEntity,
+      id: testUserEntity.sk2,
+      email: testUserEntity.hk
+    })
+  })
+})

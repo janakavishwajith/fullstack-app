@@ -5,7 +5,7 @@ import { users } from "./controllers"
 import configurePassport from "./config/passport"
 import { NextFunction, Request, RequestHandler, Response } from "express"
 
-const app = express()
+export const app = express()
 
 /**
  * Configure Passport
