@@ -1,6 +1,5 @@
 import * as pulumi from "@pulumi/pulumi";
 import * as aws from "@pulumi/aws";
-import * as awsx from "@pulumi/awsx";
 import * as crypto from "crypto"
 import { uploadFrontend, packageLambda, updateFrontendConfig } from "./util";
 
@@ -37,11 +36,10 @@ const lambdaRole = new aws.iam.Role("serverlessFullstack-api-lambdaRole", {
     Version: "2012-10-17",
     Statement: [{
       Action: "sts:AssumeRole",
+      Effect: "Allow",
       Principal: {
         Service: "lambda.amazonaws.com"
-      },
-      Effect: "Allow",
-      Sid: ""
+      }
     }]
   }
 })
@@ -56,13 +54,15 @@ const lambdaFunc = new aws.lambda.Function("serverlessFullstack-api-lambdaFunc",
     variables: {
       db: dynamoTable.name,
       dbIndex1: dynamoTable.globalSecondaryIndexes.apply(indexes => (indexes && indexes[0])?.name ?? "gs1"),
-      tokenSecret: crypto.randomBytes(64).toString("hex")
+      tokenSecret: pulumi.secret(crypto.randomBytes(64).toString("hex"))
     }
   }
 }, {
   parent: lambdaRole,
   dependsOn: [ dynamoTable ]
 })
+
+export const lambdaEnvironment = lambdaFunc.environment.apply(env => env?.variables)
 
 // Add policy for accessing DynamoDB for the Lambda
 new aws.iam.RolePolicy("serverlessFullstack-api-rolePolicy-DynamoDB", {
@@ -152,7 +152,7 @@ const route = new aws.apigatewayv2.Route("serverlessFullstack-api-gateway-route"
   target: pulumi.interpolate`integrations/${integration.id}`
 }, { parent: apiGateway })
 
-const stage = new aws.apigatewayv2.Stage("serverlessFullstack-api-gateway-stage", {
+new aws.apigatewayv2.Stage("serverlessFullstack-api-gateway-stage", {
   apiId: apiGateway.id,
   name: "$default",
   routeSettings: [{

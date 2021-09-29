@@ -1,14 +1,14 @@
 import * as child_process from "child_process"
 import * as util from "util"
 import * as fs from "fs"
-import * as siteConfig from "../../site/src/config.json"
+import * as siteConfig from "../../../site/src/config.json"
 import * as pulumi from "@pulumi/pulumi"
-import * as path from "path"
+import * as upath from "upath"
 
 const exec = util.promisify(child_process.exec)
 
-const siteFolder = path.join(__dirname, "..", "..", "site")
-const apiFolder = path.join(__dirname, "..", "..", "api")
+const siteFolder = upath.join(__dirname, "..", "..", "..", "site")
+const apiFolder = upath.join(__dirname, "..", "..")
 
 export const packageLambda = async (): Promise<string> => {
   // Run package during preview step
@@ -18,7 +18,7 @@ export const packageLambda = async (): Promise<string> => {
     console.log("LAMBDA: Lambda packaging complete")
   }
 
-  return path.join(apiFolder, ".serverless", "fullstack-api.zip")
+  return upath.join(apiFolder, ".serverless", "fullstack-api.zip")
 }
 
 export const uploadFrontend = async (bucketName: string): Promise<void> => {
@@ -28,18 +28,18 @@ export const uploadFrontend = async (bucketName: string): Promise<void> => {
       await execCommand(`cd ${siteFolder} && npm run build`)
       console.log("REACT: React application build complete")
     } catch(error) {
-      if(!(error?.message as string)?.includes("The system cannot find the path specified"))
+      if(!(error as Error)?.message?.includes("The system cannot find the path specified"))
         throw error
     }
   }
 
   console.log("REACT: Uploading build to S3")
-  await execCommand(`aws s3 sync ${path.join(siteFolder, "build")} s3://${bucketName} --acl public-read --delete`)
+  await execCommand(`aws s3 sync ${upath.join(siteFolder, "build")} s3://${bucketName} --acl public-read --delete`)
   console.log("REACT: Build upload complete")
 }
 
-export const updateFrontendConfig = (apiEndpoint: string) => {
-  fs.writeFileSync(path.join(siteFolder, "src", "config.json"), JSON.stringify({
+export const updateFrontendConfig = (apiEndpoint: string): void => {
+  fs.writeFileSync(upath.join(siteFolder, "src", "config.json"), JSON.stringify({
     ...siteConfig,
     domains: {
       ...siteConfig.domains,
