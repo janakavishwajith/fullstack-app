@@ -2,7 +2,7 @@
  * Utils: Back-end
  */
 
-import config from '../config'
+import config from '../config.json'
 
 /**
  * Register a new user
