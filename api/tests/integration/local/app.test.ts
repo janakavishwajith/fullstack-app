@@ -1,15 +1,18 @@
-import * as request from "supertest"
+import * as supertest from "supertest"
+import { setupApp } from "../../../app"
 
 const testEnv = { ...process.env }
 const tokenSecret = "test"
-process.env.tokenSecret = tokenSecret // Set secret before importing app for passport config
 
-import { app } from "../../../app"
+let request = supertest(setupApp())
 
 beforeEach(() => {
   jest.resetModules()
   process.env.db = "test"
   process.env.tokenSecret = tokenSecret
+
+  // Reset app instance to inject environment
+  request = supertest(setupApp())
 })
 
 afterEach(() => {
@@ -17,7 +20,7 @@ afterEach(() => {
 })
 
 it("Handles CORS requests", async () => {
-  await request(app)
+  await request
     .options("/")
     .expect(200)
     .then((res) => {
@@ -28,7 +31,7 @@ it("Handles CORS requests", async () => {
 })
 
 it("Has a /test route", async () => {
-  await request(app)
+  await request
     .get("/test")
     .expect(200)
     .then((res) => {
@@ -37,7 +40,7 @@ it("Has a /test route", async () => {
 })
 
 it("Responds with 404 to unknown route requests", async () => {
-  await request(app)
+  await request
     .get("/unknown")
     .expect(404)
     .then((res) => {

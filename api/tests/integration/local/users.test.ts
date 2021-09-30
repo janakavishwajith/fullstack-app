@@ -1,16 +1,16 @@
-import * as request from "supertest"
+import * as supertest from "supertest"
 import AWS = require("aws-sdk")
 import AWSMock = require("aws-sdk-mock")
 import { generate } from "shortid"
 import * as bcrypt from "bcryptjs"
 import * as jwt from "jsonwebtoken"
 import { users as usersModel } from "../../../models"
+import { setupApp } from "../../../app"
 
 const testEnv = { ...process.env }
 const tokenSecret = "test"
-process.env.tokenSecret = tokenSecret // Set secret before importing app for passport config
 
-import { app } from "../../../app"
+let request = supertest(setupApp())
 
 beforeEach(() => {
   jest.resetModules()
@@ -18,6 +18,8 @@ beforeEach(() => {
   process.env.tokenSecret = tokenSecret
 
   AWSMock.setSDKInstance(AWS)
+  // Reset app instance to inject environment
+  request = supertest(setupApp())
 })
 
 afterEach(() => {
@@ -46,7 +48,7 @@ describe("/users/login", () => {
       Items: [ validUserEntity ]
     }))
 
-    await request(app)
+    await request
       .post("/users/login")
       .send(validCredentials)
       .expect(200)
@@ -65,7 +67,7 @@ describe("/users/login", () => {
       Items: []
     }))
 
-    await request(app)
+    await request
       .post("/users/login")
       .send(validCredentials)
       .expect(404)
@@ -79,7 +81,7 @@ describe("/users/login", () => {
       Items: [ validUserEntity ]
     }))
 
-    await request(app)
+    await request
       .post("/users/login")
       .send({
         ...validCredentials,
@@ -104,7 +106,7 @@ describe("/users/register", () => {
       }))
     })
 
-    await request(app)
+    await request
       .post("/users/register")
       .send(validCredentials)
       .expect(200)
@@ -118,21 +120,21 @@ describe("/users/register", () => {
 
   it("Fails with invalid account details", async () => {
     await Promise.all([
-      request(app)
+      request
         .post("/users/register")
         .send({})
         .expect(400)
         .then((res) => {
           expect(res.body).toHaveProperty("error", '"email" is required')
         }),
-      request(app)
+      request
         .post("/users/register")
         .send({ email: "test@test.com" })
         .expect(400)
         .then((res) => {
           expect(res.body).toHaveProperty("error", '"password" is required')
         }),
-      request(app)
+      request
         .post("/users/register")
         .send({ email: "test", password: "test" })
         .expect(400)
@@ -147,7 +149,7 @@ describe("/users/register", () => {
       Items: [ validUserEntity ]
     }))
 
-    await request(app)
+    await request
       .post("/users/register")
       .send(validCredentials)
       .expect(400)
@@ -168,7 +170,7 @@ describe("/user", () => {
       Items: [ validUserEntity ]
     }))
 
-    await request(app)
+    await request
       .post("/user")
       .set("authorization", `Bearer ${validToken}`)
       .then((res) => {
@@ -183,7 +185,7 @@ describe("/user", () => {
       Items: []
     }))
 
-    await request(app)
+    await request
       .post("/user")
       .set("authorization", `Bearer ${validToken}`)
       .expect(401)
@@ -193,14 +195,14 @@ describe("/user", () => {
     jest.spyOn(usersModel, "getById")
       .mockImplementationOnce(() => { throw new Error("Test") })
 
-    await request(app)
+    await request
       .post("/user")
       .set("authorization", `Bearer ${validToken}`)
       .expect(500)
   })
 
   it("Fails without authorization header", async () => {
-    await request(app)
+    await request
       .post("/user")
       .expect(401)
   })
@@ -215,11 +217,11 @@ describe("/user", () => {
     })
 
     await Promise.all([
-      request(app)
+      request
         .post("/user")
         .set("authorization", `Bearer ${forgedToken}`)
         .expect(401),
-      request(app)
+      request
         .post("/user")
         .set("authorization", `Bearer ${expiredToken}`)
         .expect(401)

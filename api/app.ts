@@ -5,79 +5,83 @@ import { users } from "./controllers"
 import configurePassport from "./config/passport"
 import { NextFunction, Request, RequestHandler, Response } from "express"
 
-export const app = express()
+export const setupApp = (): express.Express => {
+  const app = express()
 
-/**
- * Configure Passport
- */
+  /**
+   * Configure Passport
+   */
 
-try { configurePassport(passport) }
-catch (error) { console.log(error) }
+  try { configurePassport(passport) }
+  catch (error) { console.log(error) }
 
-/**
- * Configure Express.js Middleware
- */
+  /**
+   * Configure Express.js Middleware
+   */
 
-// Enable CORS
-app.use(function (req: Request, res: Response, next: NextFunction) {
-  res.header('Access-Control-Allow-Origin', '*')
-  res.header('Access-Control-Allow-Methods', '*')
-  res.header('Access-Control-Allow-Headers', '*')
-  res.header('x-powered-by', 'serverless-express')
-  next()
-})
+  // Enable CORS
+  app.use(function (req: Request, res: Response, next: NextFunction) {
+    res.header('Access-Control-Allow-Origin', '*')
+    res.header('Access-Control-Allow-Methods', '*')
+    res.header('Access-Control-Allow-Headers', '*')
+    res.header('x-powered-by', 'serverless-express')
+    next()
+  })
 
-// Initialize Passport and restore authentication state, if any, from the session
-app.use(passport.initialize())
-app.use(passport.session())
+  // Initialize Passport and restore authentication state, if any, from the session
+  app.use(passport.initialize())
+  app.use(passport.session())
 
-// Enable JSON use
-app.use(express.json())
+  // Enable JSON use
+  app.use(express.json())
 
-// Since Express doesn't support error handling of promises out of the box,
-// this handler enables that
-const asyncHandler = (fn: RequestHandler) => (req: Request, res: Response, next: NextFunction) => {
-  return Promise
-    .resolve(fn(req, res, next))
-    .catch(next);
-};
+  // Since Express doesn't support error handling of promises out of the box,
+  // this handler enables that
+  const asyncHandler = (fn: RequestHandler) => (req: Request, res: Response, next: NextFunction) => {
+    return Promise
+      .resolve(fn(req, res, next))
+      .catch(next);
+  };
 
-/**
- * Routes - Public
- */
+  /**
+   * Routes - Public
+   */
 
-app.options(`*`, (req, res) => {
-  res.status(200).send()
-})
+  app.options(`*`, (req, res) => {
+    res.status(200).send()
+  })
 
-app.post(`/users/register`, asyncHandler(users.register))
+  app.post(`/users/register`, asyncHandler(users.register))
 
-app.post(`/users/login`, asyncHandler(users.login))
+  app.post(`/users/login`, asyncHandler(users.login))
 
-app.get(`/test/`, (req: Request, res: Response) => {
-  res.status(200).send('Request received')
-})
+  app.get(`/test/`, (req: Request, res: Response) => {
+    res.status(200).send('Request received')
+  })
 
-/**
- * Routes - Protected
- */
+  /**
+   * Routes - Protected
+   */
 
-app.post(`/user`, passport.authenticate('jwt', { session: false }), asyncHandler(users.get))
+  app.post(`/user`, passport.authenticate('jwt', { session: false }), asyncHandler(users.get))
 
-/**
- * Routes - Catch-All
- */
+  /**
+   * Routes - Catch-All
+   */
 
-app.get(`/*`, (req: Request, res: Response) => {
-  res.status(404).send('Route not found')
-})
+  app.get(`/*`, (req: Request, res: Response) => {
+    res.status(404).send('Route not found')
+  })
 
-/**
- * Error Handler
- */
-app.use(function (err: Error, req: Request, res: Response, _next: NextFunction) {
-  console.error(err)
-  res.status(500).json({ error: `Internal Serverless Error - "${err.message}"` })
-})
+  /**
+   * Error Handler
+   */
+  app.use(function (err: Error, req: Request, res: Response, _next: NextFunction) {
+    console.error(err)
+    res.status(500).json({ error: `Internal Serverless Error - "${err.message}"` })
+  })
 
-export const handler = serverless(app)
+  return app
+}
+
+export const handler = serverless(setupApp())
