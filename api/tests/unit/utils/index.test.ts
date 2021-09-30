@@ -3,6 +3,10 @@ import * as bcrypt from "bcryptjs"
 
 const { validateEmailAddress, hashPassword, comparePassword } = utils
 
+beforeEach(() => {
+  jest.resetModules()
+})
+
 describe(".validateEmailAddress()", () => {
   it("Returns true on valid emails", () => {
     expect(validateEmailAddress("test@test.com")).toEqual(true)

@@ -13,6 +13,7 @@ process.env.tokenSecret = tokenSecret // Set secret before importing app for pas
 import { app } from "../../../app"
 
 beforeEach(() => {
+  jest.resetModules()
   process.env.db = "test"
   process.env.tokenSecret = tokenSecret
 
@@ -116,7 +117,7 @@ describe("/users/register", () => {
   })
 
   it("Fails with invalid account details", async () => {
-    Promise.all([
+    await Promise.all([
       request(app)
         .post("/users/register")
         .send({})

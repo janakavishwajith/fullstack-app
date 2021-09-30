@@ -21,6 +21,7 @@ describe(".register()", () => {
   const { register } = users
 
   beforeEach(() => {
+    jest.resetModules()
     AWSMock.setSDKInstance(AWS)
     AWSMock.mock('DynamoDB.DocumentClient', 'put', (params, cb) => cb(null, null))
   })

@@ -7,6 +7,7 @@ process.env.tokenSecret = tokenSecret // Set secret before importing app for pas
 import { app } from "../../../app"
 
 beforeEach(() => {
+  jest.resetModules()
   process.env.db = "test"
   process.env.tokenSecret = tokenSecret
 })

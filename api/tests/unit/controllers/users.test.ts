@@ -13,6 +13,7 @@ const getByEmailSpy = jest.spyOn(userModels, 'getByEmail')
 const comparePasswordSpy = jest.spyOn(utils, 'comparePassword')
 
 beforeEach(() => {
+  jest.resetModules()
   mockClear()
 })
 
