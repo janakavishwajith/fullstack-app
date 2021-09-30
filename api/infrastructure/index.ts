@@ -170,93 +170,109 @@ export const apiEndpoint = pulumi.interpolate`${apiGateway.apiEndpoint}/`
     return apiEndpoint
   })
 
-// Create a S3 bucket for the front-end application
-const frontendBucket = new aws.s3.Bucket("serverlessFullstack-frontend-bucket", {
-  website: {
-    indexDocument: "index.html",
-    errorDocument: "index.html"
-  },
-  forceDestroy: true
-}, {
-  dependsOn: [ apiGateway ]
-})
+const deployFrontend = () => {
+  // Create a S3 bucket for the front-end application
+  const frontendBucket = new aws.s3.Bucket("serverlessFullstack-frontend-bucket", {
+    website: {
+      indexDocument: "index.html",
+      errorDocument: "index.html"
+    },
+    forceDestroy: true
+  }, {
+    dependsOn: [ apiGateway ]
+  })
 
-// Upload frontend to S3 bucket & export bucket name to outputs
-// * It's also a trick to make pulumi wait for upload
-export const bucketName = frontendBucket.bucket.apply(async bucketName => {
-  if(!process.env.SKIP_FRONTEND_UPLOAD && !pulumi.runtime.isDryRun())
-    await uploadFrontend(bucketName)
-  
-  return bucketName
-})
+  // Upload frontend to S3 bucket & export bucket name to outputs
+  // * It's also a trick to make pulumi wait for upload
+  const bucketName = frontendBucket.bucket.apply(async bucketName => {
+    if(!process.env.SKIP_FRONTEND_UPLOAD && !pulumi.runtime.isDryRun())
+      await uploadFrontend(bucketName)
+    
+    return bucketName
+  })
 
-// Create Origin Access Identity for CloudFront
-const frontendOriginAccessIdentity = new aws.cloudfront.OriginAccessIdentity("serverlessFullstack-frontend-cloudfront-originAccessIdentity", {
-  comment: frontendBucket.bucket
-}, {
-  parent: frontendBucket,
-})
+  // Create Origin Access Identity for CloudFront
+  const frontendOriginAccessIdentity = new aws.cloudfront.OriginAccessIdentity("serverlessFullstack-frontend-cloudfront-originAccessIdentity", {
+    comment: frontendBucket.bucket
+  }, {
+    parent: frontendBucket,
+  })
 
-new aws.s3.BucketPolicy("serverlessFullstack-frontend-bucket-policy", {
-  bucket: frontendBucket.id,
-  policy: {
-    Version: "2012-10-17",
-    Statement: [{
-      Action: [ "s3:GetObject" ],
-      Effect: "Allow",
-      Resource: [ frontendBucket.arn.apply(arn => `${arn}/*`) ],
-      Principal: {
-        AWS: frontendOriginAccessIdentity.iamArn
+  new aws.s3.BucketPolicy("serverlessFullstack-frontend-bucket-policy", {
+    bucket: frontendBucket.id,
+    policy: {
+      Version: "2012-10-17",
+      Statement: [{
+        Action: [ "s3:GetObject" ],
+        Effect: "Allow",
+        Resource: [ frontendBucket.arn.apply(arn => `${arn}/*`) ],
+        Principal: {
+          AWS: frontendOriginAccessIdentity.iamArn
+        }
+      }]
+    }
+  }, {
+    parent: frontendBucket
+  })
+
+  // Create CloudFront Distribution
+  const cloudfrontS3OriginName = "frontendBucketOrigin"
+  const frontendDistribution = new aws.cloudfront.Distribution("serverlessFullstack-frontend-cloudfront-distribution", {
+    defaultCacheBehavior: {
+      allowedMethods: [ "GET", "HEAD", "OPTIONS" ],
+      cachedMethods: [ "GET", "HEAD", "OPTIONS" ],
+      compress: true,
+      minTtl: 0,
+      defaultTtl: 3600,
+      maxTtl: 31536000,
+      targetOriginId: cloudfrontS3OriginName,
+      viewerProtocolPolicy: "redirect-to-https",
+      forwardedValues: {
+        queryString: false,
+        cookies: {
+          forward: "none"
+        }
       }
-    }]
-  }
-}, {
-  parent: frontendBucket
-})
-
-// Create CloudFront Distribution
-const cloudfrontS3OriginName = "frontendBucketOrigin"
-const frontendDistribution = new aws.cloudfront.Distribution("serverlessFullstack-frontend-cloudfront-distribution", {
-  defaultCacheBehavior: {
-    allowedMethods: [ "GET", "HEAD", "OPTIONS" ],
-    cachedMethods: [ "GET", "HEAD", "OPTIONS" ],
-    compress: true,
-    minTtl: 0,
-    defaultTtl: 3600,
-    maxTtl: 31536000,
-    targetOriginId: cloudfrontS3OriginName,
-    viewerProtocolPolicy: "redirect-to-https",
-    forwardedValues: {
-      queryString: false,
-      cookies: {
-        forward: "none"
+    },
+    customErrorResponses: [
+      { errorCode: 403, responseCode: 200, responsePagePath: "/index.html" },
+      { errorCode: 404, responseCode: 200, responsePagePath: "/index.html" }
+    ],
+    enabled: true,
+    httpVersion: "http2",
+    defaultRootObject: "index.html",
+    origins: [{
+      domainName: frontendBucket.bucketRegionalDomainName,
+      originId: cloudfrontS3OriginName,
+      s3OriginConfig: {
+        originAccessIdentity: frontendOriginAccessIdentity.cloudfrontAccessIdentityPath
       }
+    }],
+    restrictions: {
+      geoRestriction: {
+        restrictionType: "none"
+      }
+    },
+    viewerCertificate: {
+      cloudfrontDefaultCertificate: true
     }
-  },
-  customErrorResponses: [
-    { errorCode: 403, responseCode: 200, responsePagePath: "/index.html" },
-    { errorCode: 404, responseCode: 200, responsePagePath: "/index.html" }
-  ],
-  enabled: true,
-  httpVersion: "http2",
-  defaultRootObject: "index.html",
-  origins: [{
-    domainName: frontendBucket.bucketRegionalDomainName,
-    originId: cloudfrontS3OriginName,
-    s3OriginConfig: {
-      originAccessIdentity: frontendOriginAccessIdentity.cloudfrontAccessIdentityPath
-    }
-  }],
-  restrictions: {
-    geoRestriction: {
-      restrictionType: "none"
-    }
-  },
-  viewerCertificate: {
-    cloudfrontDefaultCertificate: true
-  }
-}, {
-  parent: frontendBucket
-})
+  }, {
+    parent: frontendBucket
+  })
 
-export const frontendUrl = frontendDistribution.domainName
+  const frontendUrl = frontendDistribution.domainName
+
+  return {
+    frontendUrl,
+    bucketName
+  }
+}
+
+// Conditionally deploy front end services
+let result = undefined
+if(!process.env.SKIP_FRONTEND) {
+  result = deployFrontend()
+}
+
+export const frontendUrl = result?.frontendUrl
+export const bucketName = result?.bucketName

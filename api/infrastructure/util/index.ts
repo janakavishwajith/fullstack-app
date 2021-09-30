@@ -48,7 +48,7 @@ export const updateFrontendConfig = (apiEndpoint: string): void => {
   }))
 }
 
-const execCommand = async (command: string): Promise<void> => {
+export const execCommand = async (command: string): Promise<void> => {
   const { stdout, stderr } = await exec(command)
   console.log(stdout)
   if(stderr) {
