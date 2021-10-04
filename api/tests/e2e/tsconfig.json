@@ -1,0 +1,15 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "baseUrl": "../../node_modules",
+    "types": [
+      "cypress",
+      "cypress-localstorage-commands"
+    ]
+  },
+  "include": [
+    "**/*.ts",
+    "../../node_modules/cypress"
+  ],
+  "exclude": []
+}

@@ -22,6 +22,8 @@
   "exclude": [
     ".serverless",
     ".build",
-    "node_modules"
+    "node_modules",
+    "tests/e2e",
+    "cypress"
   ]
 }

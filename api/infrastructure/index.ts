@@ -177,7 +177,8 @@ const deployLambda = () => {
   return {
     apiEndpoint,
     lambdaEnvironment,
-    apiGateway
+    apiGateway,
+    lambdaFunc
   }
 }
 
@@ -188,7 +189,7 @@ if(!process.env.SKIP_LAMBDA)
 export const apiEndpoint = lambdaResult?.apiEndpoint
 export const lambdaEnvironment = lambdaResult?.lambdaEnvironment
 
-const deployFrontend = (apiGateway: aws.apigatewayv2.Api) => {
+const deployFrontend = (lambdaFunc: aws.lambda.Function) => {
   // Create a S3 bucket for the front-end application
   const frontendBucket = new aws.s3.Bucket("serverlessFullstack-frontend-bucket", {
     website: {
@@ -197,7 +198,7 @@ const deployFrontend = (apiGateway: aws.apigatewayv2.Api) => {
     },
     forceDestroy: true
   }, {
-    dependsOn: [ apiGateway ]
+    dependsOn: [ lambdaFunc ]
   })
 
   // Upload frontend to S3 bucket & export bucket name to outputs
@@ -289,7 +290,7 @@ const deployFrontend = (apiGateway: aws.apigatewayv2.Api) => {
 // Conditionally deploy front end services
 let frontEndResult = undefined
 if(!process.env.SKIP_FRONTEND && lambdaResult) {
-  frontEndResult = deployFrontend(lambdaResult.apiGateway)
+  frontEndResult = deployFrontend(lambdaResult.lambdaFunc)
 }
 
 export const frontendUrl = frontEndResult?.frontendUrl

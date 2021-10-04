@@ -1,0 +1,9 @@
+{
+  "integrationFolder": "tests/e2e/",
+  "testFiles": [
+    "*.spec.ts",
+    "*.test.ts"
+  ],
+  "projectId": "2sgqvh",
+  "experimentalInteractiveRunEvents": true
+}

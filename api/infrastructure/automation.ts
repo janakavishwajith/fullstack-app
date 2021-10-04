@@ -6,6 +6,8 @@ const defaultArgs: LocalProgramArgs = {
   workDir: __dirname
 }
 
+process.env.IS_AUTOMATION_RUN = "true"
+
 const getStack = async (
   stackName: string = defaultArgs.stackName
 ): Promise<Stack> => {
@@ -43,7 +45,7 @@ export const destroy = async (
 export const remove = async (
   stackName?: string
 ): Promise<void> => {
-  await execCommand(`pulumi stack rm ${stackName} --yes`)
+  await execCommand(`cd ${__dirname} && pulumi stack rm ${stackName} --yes`)
 }
 
 export const getOutputs = async(

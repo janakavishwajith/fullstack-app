@@ -1,4 +1,3 @@
-org: defrosted
 app: fullstack-api
 service: fullstack-api
 
@@ -14,6 +13,7 @@ custom:
       localDir: '../site/build'
 
 provider:
+  lambdaHashingVersion: 20201221
   name: aws
   runtime: nodejs12.x
   region: eu-central-1

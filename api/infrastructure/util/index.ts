@@ -12,7 +12,10 @@ const apiFolder = upath.join(__dirname, "..", "..")
 
 export const packageLambda = async (): Promise<string> => {
   // Run package during preview step
-  if(!process.env.SKIP_SLS_PACKAGE && pulumi.runtime.isDryRun()) {
+  if(!process.env.SKIP_SLS_PACKAGE 
+    || pulumi.runtime.isDryRun()
+    || process.env.IS_AUTOMATION_RUN === "true") 
+  {
     console.log("LAMBDA: Starting to package Lambda...")
     await execCommand(`cd ${apiFolder} && sls package`)
     console.log("LAMBDA: Lambda packaging complete")
