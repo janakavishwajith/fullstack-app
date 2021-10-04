@@ -1,111 +1,53 @@
-[![Serverless Fullstack Application Express React DynamoDB AWS Lambda AWS HTTP API](https://s3.amazonaws.com/assets.github.serverless/components/readme-serverless-framework-fullstack-application.png
-)](https://www.serverless-fullstack-app.com)
+# Serverless Testing Practices For AWS Lambdas
 
-A complete, serverless, full-stack application built on AWS Lambda, AWS HTTP API, Express.js, React and DynamoDB.
+This repository is a part of a master's thesis work under the CloWeE research group at Tampere University. It is a fork of a sample application created and maintained by the Serverless Framework. The purpose of this repository is to showcase the application of different automatic testing approaches for AWS Lambda applications.
 
-#### Live Demo: [https://www.serverless-fullstack-app.com](https://www.serverless-fullstack-app.com)
+The application has been modified in the following ways from the original fork:
+- Converted to "traditional" Serverless Framework configuration (using AWS CloudFormation) away from Serverless Components
+- Converted the API application from JavaScript to TypeScript
+  - Added a few null/undefined checks to fix TS errors
+  - Small improvements like using object destructuring in some places (when accessing environment variables)
 
-## Quick Start
+The application now also features a Pulumi Infrastructure-as-Code (IaC) program for more automated deployments (under api/infrastructure directory). Tests were implemented using the Jest testing framework for unit and integration tests, and Cypress.io for E2E tests.
 
-Install the latest version of the Serverless Framework:
+## Setting up
 
+The instructions in this file shows how to deploy the application using Pulumi and how to run the test suites. For the original instructions displaying how to deploy the application using the Serverless Framework, refer to the [original README file](README.original.md). The original process using Serverless Framework is mostly the same despite moving away from the original component implementation, though now it is only necessary to deploy the API project.
 
+To run the program as is you will need to install [Node.js](https://nodejs.org/en/). If you wish to run cloud tests you will also need [Serverless Framework](https://www.npmjs.com/package/serverless), [AWS CLI](https://aws.amazon.com/cli/), and [Pulumi](https://www.pulumi.com/docs/get-started/aws/begin/), along with AWS and Pulumi accounts.
+
+Before moving on, you will also need to install node modules for the project using the ```npm i``` command inside the api and site directories.
+
+## Pulumi
+
+Pulumi deployment can be ran manually with the following commands:
 ```
-npm i -g serverless
-```
-
-After installation, make sure you connect your AWS account by setting a provider in the org setting page on the [Serverless Dashboard](https://app.serverless.com).
-
-Then, initialize the `fullstack-app` template:
-
-```
-serverless init fullstack-app
-cd fullstack-app
-```
-
-Then, add the following environment variables in an `.env` file in the root directory, like this:
-
-```text
-# This signs you JWT tokens used for auth.  Enter a random string in here that's ~40 characters in length.
-tokenSecret=yourSecretKey
-
-# Only add this if you want a custom domain.  Purchase it on AWS Route53 in your target AWS account first.
-domain=serverless-fullstack-app.com
+# If you leave out the --stack flags, Pulumi will either prompt you to select a stack or default to the previously used one.
+# Deploy stack (cloud resources)
+pulumi up --stack $STACK
+# Destroy resources associated with the stack
+pulumi destroy --stack $STACK
+# Remove stack
+pulumi stack rm $STACK
 ```
 
-In the root folder of the project, run `serverless deploy`
+## Jest
 
-Lastly, you will need to add your API domain manually to your React application in `./site/src/config.js`, so that you interact with your serverless Express.js back-end.  You can find the your API url by going into `./api` and running `serverless info` and copying the `url:` value.  It should look something like this `https://9jfalnal19.execute-api.us-east-1.amazonaws.com` or it will look like the custom domain you have set.
+To run all tests with Jest you can use the following command:
+```npx jest```
 
-**Note:**  Upon the first deployment of your website, it will take a 2-3 minutes for the Cloudfront (CDN) URL to work.  Until then, you can access it via the `bucketUrl`.
-
-After initial deployment, we recommend deploying only the parts you are changing, not the entire thing together (why risk deploying your database with a code change?).  To do this, `cd` into a part of the application and run `serverless deploy`.
-
-When working on the `./api` we highly recommend using `serverless dev`.  This command watches your code, auto-deploys it, and streams `console.log()` statements and errors directly to your CLI in real-time!
-
-If you want to add custom domains to your landing pages and API, either hardcode them in your `serverless.yml` or reference them as environment variables in `serverless.yml`, like this:
-
-```yaml
-inputs:
-  domain: ${env:domain}
+However, as both cloud and hybrid tests deploy separate cloud environments, you might want to run tests separately. For this you can utilize regex patterns along with the Jest commands: 
 ```
-
-```text
-domain=serverless-fullstack-app.com
+npx jest \"tests/integration/local\|tests/unit\"
+npx jest tests/integration/hybrid
+npx jest tests/integration/cloud
 ```
+If you wish to ignore the expected console prints from code, you can also pass the flag ```--silent ```to Jest.
 
-Support for stages is built in. 
+The hybrid tests are set up to only deploy a DynamoDB instance to AWS, whereas the cloud tests will deploy the entire API excluding the front end. This means that the hybrid tests are significantly faster to run. The local tests run the fastest, as they do not require any external services.
 
-You can deploy everything or individual components to different stages via the `--stage` flag, like this:
- 
-`serverless deploy --stage prod`
+## Cypress
 
-Or, you can hardcode the stage in `serverless.yml` (not recommended):
+To run the tests with Cypress, use the command ```npx cypress run```. You can also execute tests using the Cypress GUI using ```npx cypress open```. It's worth noting that the Cypress tests are slow to run, as especially the CloudFront deployment takes time. Also note, that contrary to the documentation, the Cypress GUI doesn't currently seem to correctly run the teardown hook for the Pulumi stack, and has to be done manually afterwards.
 
-```yaml
-app: fullstack
-component: express@0.0.20
-name: fullstack-api
-stage: prod # Put the stage in here
-```
-
-Lastly, you can add separate environment variables for each stage using `.env` files with the stage name in them:
-
-```bash
-.env # Any stage
-.env.dev # "dev" stage only
-.env.prod # "prod" stage only
-```
-
-Then simply reference those environment variables using Serverless Variables in your YAML:
-
-```yaml
-app: fullstack
-component: express@0.0.20
-name: fullstack-api
-
-inputs:
-  domain: api.${env:domain}
-```
-
-And deploy!
-
-`serverless deploy --stage prod`
-
-Enjoy!  This is a work in progress and we will continue to add funcitonality to this.
-
-## Other Resources
-
-For more details on each part of this fullstack application, check out these resources:
-
-* [Serverless Components](https://github.com/serverless/components)
-* [Serverless Express](https://github.com/serverless-components/express)
-* [Serverless Website](https://github.com/serverless-components/website)
-* [Serverless AWS DynamoDB](https://github.com/serverless-components/aws-dynamodb)
-* [Serverless AWS IAM Role](https://github.com/serverless-components/aws-iam-role)
-
-## Guides
-
-### How To Debug CORS Errors
-
-If you are running into CORS errors, see our guide on debugging them [within the Express Component's repo](https://github.com/serverless-components/express/blob/master/README.md#how-to-debug-cors-errors)
+If you wish to deploy the environments separately beforehand, you can manually pass the CloudFront distribution endpoint to Cypress using an environment variable called ```URL``` while disabling Pulumi deployment, e.g. ```npx cypress run --env SKIP_PULUMI=true,URL=$DISTRIBUTION_URL```.
