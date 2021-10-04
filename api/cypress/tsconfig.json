@@ -4,14 +4,12 @@
     "baseUrl": "../node_modules",
     "types": [
       "cypress",
-      "cypress-localstorage-commands",
-      "@cypress"
+      "cypress-localstorage-commands"
     ]
   },
   "include": [
     "**/*.ts",
-    "../node_modules/cypress",
-    "../node_modules/@cypress"
+    "../node_modules/cypress"
   ],
   "exclude": []
 }
