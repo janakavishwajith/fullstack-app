@@ -173,6 +173,7 @@ describe("/user", () => {
     await request
       .post("/user")
       .set("authorization", `Bearer ${validToken}`)
+      .expect(200)
       .then((res) => {
         expect(res.body).toEqual(expect.objectContaining({
           user: usersModel.convertToPublicFormat(formattedUserEntity)

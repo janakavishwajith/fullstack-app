@@ -14,11 +14,12 @@ export const packageLambda = async (): Promise<string> => {
   // Run package during preview step
   if(!process.env.SKIP_SLS_PACKAGE 
     || pulumi.runtime.isDryRun()
-    || process.env.IS_AUTOMATION_RUN === "true") 
+    || (process.env.IS_AUTOMATION_RUN === "true" && !process.env.SKIP_SLS_PACKAGE)) 
   {
     console.log("LAMBDA: Starting to package Lambda...")
+    const startTimer = Date.now()
     await execCommand(`cd ${apiFolder} && sls package`)
-    console.log("LAMBDA: Lambda packaging complete")
+    console.log(`LAMBDA: Lambda packaging complete in ${(Date.now() - startTimer) / 1000} seconds`)
   }
 
   return upath.join(apiFolder, ".serverless", "fullstack-api.zip")
@@ -28,8 +29,9 @@ export const uploadFrontend = async (bucketName: string): Promise<void> => {
   if(!process.env.SKIP_REACT_BUILD) {
     try {
       console.log("REACT: Starting to build React application")
+      const startTimer = Date.now()
       await execCommand(`cd ${siteFolder} && npm run build`)
-      console.log("REACT: React application build complete")
+      console.log(`REACT: React application build complete in ${(Date.now() - startTimer) / 1000} seconds`)
     } catch(error) {
       if(!(error as Error)?.message?.includes("The system cannot find the path specified"))
         throw error
@@ -37,8 +39,9 @@ export const uploadFrontend = async (bucketName: string): Promise<void> => {
   }
 
   console.log("REACT: Uploading build to S3")
+  const startTimer = Date.now()
   await execCommand(`aws s3 sync ${upath.join(siteFolder, "build")} s3://${bucketName} --acl public-read --delete`)
-  console.log("REACT: Build upload complete")
+  console.log(`REACT: Build upload complete in ${(Date.now() - startTimer) / 1000} seconds`)
 }
 
 export const updateFrontendConfig = (apiEndpoint: string): void => {

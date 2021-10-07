@@ -248,7 +248,8 @@ describe("/user", () => {
   it("Succeeds if valid authorization token is sent", async () => {
     await putDynamoUser()
 
-    await request
+    try {
+      await request
       ?.post("/user")
       .set("authorization", `Bearer ${validToken}`)
       .expect(200)
@@ -257,9 +258,10 @@ describe("/user", () => {
           user: usersModel.convertToPublicFormat(formattedUserEntity)
         }))
       })
-
-    await deleteDynamoUser()
-  })
+    } finally {
+      await deleteDynamoUser()
+    }
+  }, 20000)
 
   it("Fails if user isn't in the database", async () => {
     await request
@@ -285,17 +287,19 @@ describe("/user", () => {
       expiresIn: -60
     })
 
-    await Promise.all([
-      request
-        ?.post("/user")
-        .set("authorization", `Bearer ${forgedToken}`)
-        .expect(401),
-      request
-        ?.post("/user")
-        .set("authorization", `Bearer ${expiredToken}`)
-        .expect(401)
-    ])
-
-    await deleteDynamoUser()
-  })
+    try {
+      await Promise.all([
+        request
+          ?.post("/user")
+          .set("authorization", `Bearer ${forgedToken}`)
+          .expect(401),
+        request
+          ?.post("/user")
+          .set("authorization", `Bearer ${expiredToken}`)
+          .expect(401)
+      ])
+    } finally {
+      await deleteDynamoUser()
+    }
+  }, 20000)
 })
