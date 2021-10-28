@@ -1,6 +1,6 @@
 # Serverless Testing Practices For AWS Lambdas
 
-This repository is a part of a master's thesis work under the CloWeE research group at Tampere University. It is a fork of a sample application created and maintained by the Serverless Framework. The purpose of this repository is to showcase the application of different automatic testing approaches for AWS Lambda applications.
+This repository is a part of a M.Sc. thesis work under the CloWeE research group at Tampere University. It is a fork of a sample application created and maintained by the Serverless Framework. The purpose of this repository is to showcase the application of different automatic testing approaches for AWS Lambda applications.
 
 The application has been modified in the following ways from the original fork:
 - Converted to "traditional" Serverless Framework configuration (using AWS CloudFormation) away from Serverless Components
@@ -10,7 +10,23 @@ The application has been modified in the following ways from the original fork:
 
 The application now also features a Pulumi Infrastructure-as-Code (IaC) program for more automated deployments (under api/infrastructure directory). Tests were implemented using the Jest testing framework for unit and integration tests, and Cypress.io for E2E tests.
 
-## Setting up
+## Applied Testing Approaches
+
+The repository showcases unit, integration, and system (E2E) testing applied to a full-stack application as a part of the thesis regarding this repository. The thesis studies solutions for the documented difficulties found in current scientific publications. The thesis identified three integration testing approaches by conducting a literature review on guidebooks for serverless application development; local, integration, and cloud integration testing. The Pulumi IaC application is used to overcome some difficulties regarding testing with real-world AWS cloud infrastructure. 
+
+The tests can be found in the following directories within this repository:
+
+| Testing approach   | Directory                    |
+| ------------------ | ---------------------------- |
+| Unit               | api/tests/unit               |
+| Local integration  | api/tests/integration/local  |
+| Hybrid integration | api/tests/integration/hybrid |
+| Cloud integration  | api/tests/cloud              |
+| E2E system         | api/tests/e2e                |
+
+Additionally, the Cypress configuration is located under api/cypress directory and Jest configuration is located in the api/jest.config.js file.
+
+## Instructions for Testing
 
 The instructions in this file shows how to deploy the application using Pulumi and how to run the test suites. For the original instructions displaying how to deploy the application using the Serverless Framework, refer to the [original README file](README.original.md). The original process using Serverless Framework is mostly the same despite moving away from the original component implementation, though now it is only necessary to deploy the API project.
 
