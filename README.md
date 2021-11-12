@@ -26,6 +26,20 @@ The tests can be found in the following directories within this repository:
 
 Additionally, the Cypress configuration is located under api/cypress directory and Jest configuration is located in the api/jest.config.js file.
 
+## Developed test cases
+The original application does not have any pre-existing tests in its original Git fork. Therefore, there were not any existing dependencies regarding testing frameworks and other tooling choices.
+Therefore, we developed a complete test-suite from scratch.  The general scope of the tests is the back end serverless function, with end-to-end tests extending to the entire full-stack application. The Pulumi application and the front end application were not tested separately.
+
+The unit test suites reached a total coverage of 100\% in all areas for the testable units. The integration test cases reached a statement coverage of 93.33\%, a branch coverage of 74.07\%, a function coverage of 100\%, and a line coverage of 100\%. The combined coverage is 100\% in all areas; refer to Appendix A for complete coverage tables.
+
+
+### Unit Test
+Please, add Table 5.1 here
+
+### Integration Test
+Please, add Table 5.2 here
+
+
 ## Instructions for Testing
 
 The instructions in this file shows how to deploy the application using Pulumi and how to run the test suites. For the original instructions displaying how to deploy the application using the Serverless Framework, refer to the [original README file](README.original.md). The original process using Serverless Framework is mostly the same despite moving away from the original component implementation, though now it is only necessary to deploy the API project.
