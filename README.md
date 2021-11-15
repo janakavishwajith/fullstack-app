@@ -34,12 +34,89 @@ The unit test suites reached a total coverage of 100\% in all areas for the test
 
 
 ### Unit Test
-Please, add Table 5.1 here
+
+| Unit name	            	| Id Test description                                           |
+| ----------------------  | ------------------------------------------------------------- |
+| Registration controller |                                                               |
+| U1.1		              	| Responds with status 200 OK and signed JWT on successful      |
+| 			                  | registration.                                                 |
+| U1.2 			              | Responds with status 400 Bad Request when user is already     |
+|	  		                  | registered.		                                                |
+| U1.3 			              | Responds with status 500 Internal Server Error when           |
+| 			                  | Lambda environment is invalid or DynamoDB query failed.       | 
+| Login controller	      |                                                               |
+| U2.1			              | Responds with status 200 OK and signed JWT on successful      |
+| 			                  | login.                                                        |
+| U2.2			              | Responds with 404 Not Found if user is not registered.        |  
+| U2.3			              | Responds with 401 Unauthorized when passwords do not          |
+| 			                  | match.                                                        |
+| U2.4 			              | Responds with 500 Internal Server Error when Lambda           |
+| 	                  		| environment is invalid or DynamoDB query failed.              |
+| User controller     		|                                                               |
+| U3.1 	             		  | Responds with status 200 OK and the user information of the   |
+| 	                  		| authenticated user.                                           |
+| User model register   	|                                                               |
+| U4.1 			              | Registers a valid user account.                               |
+| U4.2		              	| Throws an error if Lambda environment is lacking.             |
+| U4.3		              	| Throws an error if email or password is missing or invalid.   |
+| U4.4 		               	| Throws an error if user is already registered.                |
+| User model getByEmail   |                                                               |
+| U5.1              			| Returns an user entity if found.                              |  
+| U5.2 		              	| Returns null if the user was not found.                       |   
+| U5.3 			              | Throws an error if Lambda environment is lacking.             |
+| U5.4 		              	| Throws an error if email is missing or invalid.               |
+| User model getById 	    |                                                               |
+| U6.1 			              | Returns an user entity if found.                              |
+| U6.2 			              | Returns null if user was not found.                           |
+| U6.3 		              	| Throws an error if Lambda environment is lacking.             |
+| U6.4 		               	| Throws an error if id is empty or missing.                    |
+| User model		          |                                                               |
+| convertToPublicFormat   |                                                               |
+| U7.1 	              		| Converts user to a publicly displayable format.               |
+| U7.2 		              	| Is able to convert any object (with the same key-values).     |
+| User model		          |                                                               |
+| formatUserEntity        |                                                               |
+| U8.1 		              	| Parses user entity and adds id and email values to the object.|
+| Utilities	            	|                                                               |
+| validateEmailAddress    |                                                               |
+| U9.1 			              |Returns true for valid email addresses.                        |
+| U9.2 	              		|Returns false for invalid email addresses.                     |
+| Utilities hashPassword  |                                                               |
+| U10.1 		            	|Hashes a password correctly.                                   |
+| Utilities	            	|                                                               |
+| comparePassword	      	|                                                               |
+| U11.1 		            	|Returns true when passwords match.                             |
+| U11.2 	            		|Returns false when passwords do not match.                     |
 
 ### Integration Test
-Please, add Table 5.2 here
 
-
+| Endpoint or functionality |Id    | Test description
+| ------------------------- | ---- | ---------------------------------------------------------------------------- |
+| /users/login endpoint     | I1.1 | Login succeeds (200 OK) with valid credentials of a registered user.         |
+|                           | I1.2 | Login fails (404 Not Found) when user is not registered.                     |
+|                           | I1.3 | Login fails (401 Unauthorized) when the given password                       |
+|                           |      | does not match the registered credentials.                                   |
+| /users/register endpoint  |      |                                                                              |
+|                           | I2.1 | Registration succeeds (200 OK) with valid credentials.                       | 
+|                           | I2.2 | Registration fails (400 Bad Request) with invalid account                    |
+|                           |      | details (e.g. validation fails).                                             | 
+|                           | I2.3 | Registration fails (400 Bad Request) if the email is already                 |
+|                           |      | registered to an user.                                                       |
+| /user endpoint (user      |      |                                                                              |
+| information for front     |      |                                                                              |
+| end)                      |      |                                                                              |
+|                           | I3.1 | Succeeds (200 OK) when valid authorization token is included in the request. | 
+|                           | I3.2 | Fails (401 Unauthorized) if the user is not registered.                      |
+|                           | I3.3 | Fails (500 Internal Server Error) if the DynamoDB                            |          
+|                           |      | query cannot complete                                                        |
+|                           | I3.4 | Fails (401 Unauthorized) if authorization header was not                     |  
+|                           |      | sent                                                                         |
+|                           | I3.5 | Fails (401 Unauthorized) if the authorization token has                      |
+|                           |      | been forged (unable to verify signature) or has expired                      |
+| General API tests         | I4.1 | Responses include CORS (Cross Origin Resource Sharing)                       |
+|                           |      | headers                                                                      |
+|                           | I4.2 | API has a /test route responding with 200 OK                                 |
+|                           | I4.3 | API responds with 404 Not Found to requests to undefined routes              |
 ## Instructions for Testing
 
 The instructions in this file shows how to deploy the application using Pulumi and how to run the test suites. For the original instructions displaying how to deploy the application using the Serverless Framework, refer to the [original README file](README.original.md). The original process using Serverless Framework is mostly the same despite moving away from the original component implementation, though now it is only necessary to deploy the API project.
