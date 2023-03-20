@@ -1,45 +1,46 @@
+org: janakavishwajith
 app: fullstack-api
 service: fullstack-api
 
-variablesResolutionMode: 20210326
 useDotenv: true
 
 plugins:
-  - serverless-plugin-typescript
-  - serverless-s3-sync
+- serverless-plugin-typescript
+- serverless-s3-sync
 custom:
   s3Sync:
-    - bucketName: 'serverless-frontend-cdn-bucket-${sls:stage}'
-      localDir: '../site/build'
+  - bucketName: 'serverless-frontend-cdn-bucket-${sls:stage}'
+    localDir: '../site/build'
 
 provider:
-  lambdaHashingVersion: 20201221
   name: aws
   runtime: nodejs12.x
   region: eu-central-1
-  iamRoleStatements:
-    - Effect: Allow
-      Action:
+  iam:
+    role:
+      statements:
+      - Effect: Allow
+        Action:
         - dynamodb:Query
         - dynamodb:Scan
         - dynamodb:GetItem
         - dynamodb:PutItem
         - dynamodb:UpdateItem
         - dynamodb:DeleteItem
-      Resource:
-        - { "Fn::GetAtt": ["UsersDynamoDBTable", "Arn"] }
-    - Effect: Allow
-      Action:
+        Resource:
+        - {"Fn::GetAtt": ["UsersDynamoDBTable", "Arn"]}
+      - Effect: Allow
+        Action:
         - dynamodb:Query
         - dynamodb:Scan
-      Resource:
-        - { "Fn::Sub": "${UsersDynamoDBTable.Arn}/index/*"}
+        Resource:
+        - {"Fn::Sub": "${UsersDynamoDBTable.Arn}/index/*",}
 
 functions:
   app:
     handler: app.handler
-    events: 
-      - httpApi: '*'
+    events:
+    - httpApi: '*'
     environment:
       db: 'users-table-${sls:stage}'
       dbIndex1: 'gs1'
@@ -52,30 +53,30 @@ resources:
       Properties:
         BillingMode: PAY_PER_REQUEST
         AttributeDefinitions:
-          - AttributeName: hk
-            AttributeType: S
-          - AttributeName: sk
-            AttributeType: S
-          - AttributeName: sk2
-            AttributeType: S
+        - AttributeName: hk
+          AttributeType: S
+        - AttributeName: sk
+          AttributeType: S
+        - AttributeName: sk2
+          AttributeType: S
         KeySchema:
-          - AttributeName: hk
+        - AttributeName: hk
+          KeyType: HASH
+        - AttributeName: sk
+          KeyType: RANGE
+        GlobalSecondaryIndexes:
+        - IndexName: 'gs1'
+          KeySchema:
+          - AttributeName: sk2
             KeyType: HASH
           - AttributeName: sk
             KeyType: RANGE
-        GlobalSecondaryIndexes:
-          - IndexName: 'gs1'
-            KeySchema:
-              - AttributeName: sk2
-                KeyType: HASH
-              - AttributeName: sk
-                KeyType: RANGE
-            Projection:
-              ProjectionType: ALL
+          Projection:
+            ProjectionType: ALL
         TableName: 'users-table-${sls:stage}'
     FrontendBucket:
       Type: 'AWS::S3::Bucket'
-      Properties: 
+      Properties:
         BucketName: 'serverless-frontend-cdn-bucket-${sls:stage}'
         WebsiteConfiguration:
           IndexDocument: index.html
@@ -83,39 +84,39 @@ resources:
     FrontendBucketReadPolicy:
       Type: 'AWS::S3::BucketPolicy'
       Properties:
-        Bucket: { "Ref": "FrontendBucket" }
+        Bucket: {"Ref": "FrontendBucket"}
         PolicyDocument:
           Statement:
-            - Action: 's3:GetObject'
-              Effect: Allow
-              Resource: { "Fn::Sub": "${FrontendBucket.Arn}/*" }
-              Principal:
-                CanonicalUser: { "Fn::GetAtt": [ "FrontendCloudfrontOriginAccessIdentity", "S3CanonicalUserId" ] }
+          - Action: 's3:GetObject'
+            Effect: Allow
+            Resource: {"Fn::Sub": "${FrontendBucket.Arn}/*"}
+            Principal:
+              CanonicalUser: {"Fn::GetAtt": ["FrontendCloudfrontOriginAccessIdentity", "S3CanonicalUserId"]}
     FrontendCloudfrontOriginAccessIdentity:
       Type: 'AWS::CloudFront::CloudFrontOriginAccessIdentity'
       Properties:
         CloudFrontOriginAccessIdentityConfig:
-          Comment: { "Ref": "FrontendBucket" }
+          Comment: {"Ref": "FrontendBucket"}
     FrontendCloudfront:
       Type: 'AWS::CloudFront::Distribution'
       Properties:
         DistributionConfig:
           CustomErrorResponses:
-            - ErrorCode: 403
-              ResponseCode: 200
-              ResponsePagePath: /index.html
-            - ErrorCode: 404
-              ResponseCode: 200
-              ResponsePagePath: /index.html
+          - ErrorCode: 403
+            ResponseCode: 200
+            ResponsePagePath: /index.html
+          - ErrorCode: 404
+            ResponseCode: 200
+            ResponsePagePath: /index.html
           DefaultCacheBehavior:
             AllowedMethods:
-              - GET
-              - HEAD
-              - OPTIONS
+            - GET
+            - HEAD
+            - OPTIONS
             CachedMethods:
-              - GET
-              - HEAD
-              - OPTIONS
+            - GET
+            - HEAD
+            - OPTIONS
             Compress: true
             DefaultTTL: 3600
             TargetOriginId: frontendS3Origin
@@ -126,7 +127,7 @@ resources:
           HttpVersion: http2
           DefaultRootObject: index.html
           Origins:
-            - DomainName: 'serverless-frontend-cdn-bucket-${sls:stage}.s3.eu-central-1.amazonaws.com'
-              Id: frontendS3Origin
-              S3OriginConfig:
-                OriginAccessIdentity: { "Fn::Sub": "origin-access-identity/cloudfront/${FrontendCloudfrontOriginAccessIdentity}" }
+          - DomainName: 'serverless-frontend-cdn-bucket-${sls:stage}.s3.eu-central-1.amazonaws.com'
+            Id: frontendS3Origin
+            S3OriginConfig:
+              OriginAccessIdentity: {"Fn::Sub": "origin-access-identity/cloudfront/${FrontendCloudfrontOriginAccessIdentity}"}

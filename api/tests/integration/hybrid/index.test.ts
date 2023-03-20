@@ -1,6 +1,7 @@
 import * as shortid from "shortid"
 import * as supertest from "supertest"
 import * as automation from "../../../infrastructure/automation"
+import * as terraform_automation from "../../../infrastructure/terrform/automation_terraform"
 import * as jwt from "jsonwebtoken"
 import { users as usersModel } from "../../../models"
 import * as bcrypt from "bcryptjs"
@@ -22,12 +23,15 @@ beforeAll(async () => {
 
   process.env.SKIP_LAMBDA = "true" // Deploy only DynamoDB to speed up tests
   process.env.SKIP_FRONTEND = "true"
-  const outputs = await automation.deploy(stackName)
-
+  // const outputs = await automation.deploy(stackName)
+  const outputs = await terraform_automation.deploy()
   console.log(`Stack "${stackName}" deployed`)
 
-  const db = outputs?.dynamoTableName?.value
-  const dbIndex1 = outputs?.dynamoTableSecondaryIndex?.value
+  // const db = outputs?.dynamoTableName?.value
+  // const dbIndex1 = outputs?.dynamoTableSecondaryIndex?.value
+  
+  const db = outputs?.db_table?.value
+  const dbIndex1 = outputs?.db_table_index?.value
   const AWS_REGION = await automation.getRegion()
 
   process.env = {
@@ -44,7 +48,8 @@ beforeAll(async () => {
 
 afterAll(async () => {
   console.log(`Starting stack "${stackName}" destroy`)
-  await automation.destroy(stackName, true)
+  // await automation.destroy(stackName, true)
+  await terraform_automation.destroy()
   console.log(`Stack "${stackName}" destroyed`)
 
   // Restore original environment

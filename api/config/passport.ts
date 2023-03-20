@@ -15,7 +15,7 @@ const configure = (passport: PassportStatic): void => {
     try { user = await users.getById(jwtPayload.id) }
     catch (error) {
       console.log(error)
-      return done(error, null)
+      return done(error, undefined)
     }
 
     if (!user) { return done(null, false) }

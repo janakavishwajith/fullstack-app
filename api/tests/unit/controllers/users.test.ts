@@ -21,6 +21,21 @@ afterEach(() => {
   process.env = { ...testEnv }
 })
 
+let memStats = {}; // global accumulator
+
+process.nextTick(() => { // register function for each "tick"
+ const current = process.memoryUsage(); // get memory usage info
+ for (const key in current) {
+   // for each key val pair store max value
+   memStats[key] = Math.max(memStats[key] || 0, current[key]);
+ }
+});
+
+process.on("exit", () => {
+ // when the process is done, log once the maximum values
+ console.log("I am the exit one... ", memStats);
+});
+
 const savedUserEntity = {
   hk: "test@test.com",
   sk: "user",

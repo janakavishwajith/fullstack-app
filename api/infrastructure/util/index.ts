@@ -18,7 +18,7 @@ export const packageLambda = async (): Promise<string> => {
   {
     console.log("LAMBDA: Starting to package Lambda...")
     const startTimer = Date.now()
-    await execCommand(`cd ${apiFolder} && sls package`)
+    await execCommand(`cd ${apiFolder} && sls package --verbose`)
     console.log(`LAMBDA: Lambda packaging complete in ${(Date.now() - startTimer) / 1000} seconds`)
   }
 
@@ -56,9 +56,20 @@ export const updateFrontendConfig = (apiEndpoint: string): void => {
 
 export const execCommand = async (command: string): Promise<void> => {
   const { stdout, stderr } = await exec(command)
-  console.log(stdout)
+
+  // if(stderr) {
+  //   console.error(`CMD "${command}" ERROR:`, stderr)
+  //   throw new Error(stderr)
+  // }
+}
+
+export const execCommandOutput = async (command: string): Promise<string> => {
+  const { stdout, stderr } = await exec(command)
+
   if(stderr) {
-    console.error(`CMD "${command}" ERROR:`, stderr)
-    throw new Error(stderr)
+      console.error(`CMD "${command}" ERROR:`, stderr)
+      throw new Error(stderr)
   }
+
+  return stdout
 }

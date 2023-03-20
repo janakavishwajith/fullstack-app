@@ -26,3 +26,5 @@ tmp
 package-lock.json
 yarn.lock
 test
+.terraform
+*.backup

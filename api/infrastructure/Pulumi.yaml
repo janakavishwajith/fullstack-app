@@ -1,3 +1,5 @@
 name: serverless-fullstack-app-infrastructure
 runtime: nodejs
 description: Pulumi IaC program for the Serverless fullstack app's infrastructure
+config:
+  aws:region: eu-central-1
