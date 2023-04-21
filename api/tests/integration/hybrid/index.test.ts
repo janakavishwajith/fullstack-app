@@ -1,7 +1,7 @@
 import * as shortid from "shortid"
 import * as supertest from "supertest"
 import * as automation from "../../../infrastructure/automation"
-import * as terraform_automation from "../../../infrastructure/terrform/automation_terraform"
+import * as terraform_automation from "../../../infrastructure/terraform/automation_terraform"
 import * as jwt from "jsonwebtoken"
 import { users as usersModel } from "../../../models"
 import * as bcrypt from "bcryptjs"
@@ -16,6 +16,7 @@ const testTimeout = 10000
 
 let request: supertest.SuperTest<supertest.Test> | undefined = undefined
 const tokenSecret = "test"
+const INFRA_SETUP_PULUMI = true
 
 beforeAll(async () => {
   jest.resetModules()
@@ -23,15 +24,22 @@ beforeAll(async () => {
 
   process.env.SKIP_LAMBDA = "true" // Deploy only DynamoDB to speed up tests
   process.env.SKIP_FRONTEND = "true"
-  // const outputs = await automation.deploy(stackName)
-  const outputs = await terraform_automation.deploy()
+  let outputs;
+  let db;
+  let dbIndex1;
+  if(INFRA_SETUP_PULUMI) {
+    outputs = await automation.deploy(stackName)
+    db = outputs?.dynamoTableName?.value
+    dbIndex1 = outputs?.dynamoTableSecondaryIndex?.value
+  }
+  else {
+    outputs =  await terraform_automation.deploy()
+    db = outputs?.db_table?.value
+    dbIndex1 = outputs?.db_table_index?.value
+  }
+  
   console.log(`Stack "${stackName}" deployed`)
 
-  // const db = outputs?.dynamoTableName?.value
-  // const dbIndex1 = outputs?.dynamoTableSecondaryIndex?.value
-  
-  const db = outputs?.db_table?.value
-  const dbIndex1 = outputs?.db_table_index?.value
   const AWS_REGION = await automation.getRegion()
 
   process.env = {
@@ -44,12 +52,17 @@ beforeAll(async () => {
 
   // Assign supertest to point to the Express app
   request = supertest(setupApp())
-}, 300000)
+}, 600000)
 
 afterAll(async () => {
   console.log(`Starting stack "${stackName}" destroy`)
-  // await automation.destroy(stackName, true)
-  await terraform_automation.destroy()
+
+  if(INFRA_SETUP_PULUMI) {
+    await automation.destroy(stackName, true)
+  }
+  else {
+    await terraform_automation.destroy()
+  }
   console.log(`Stack "${stackName}" destroyed`)
 
   // Restore original environment

@@ -13,9 +13,11 @@ export const deploy = async (): Promise<any> => {
   console.log("Deploying terraform plan...")
   
   package_path = await packageLambda()
+
+  console.log(`package path is ${package_path}`)
       
-  await execCommand(`cd ${terraformFolder} && terraform init`)
-  const outputIs = execCommandOutput(`cd ${terraformFolder} && terraform apply -auto-approve -var 'lambda_location=${package_path}'`)
+  const terraInit = await execCommand(`cd ${terraformFolder} && terraform init`)
+  const outputIs = await execCommandOutput(`cd ${terraformFolder} && terraform apply -auto-approve -var 'lambda_location=${package_path}'`)
 
   console.log("Output of the apply - ", outputIs)
 

@@ -29,6 +29,7 @@ resource "aws_dynamodb_table" "serverlessFullstack-api-DynamoDB" {
   }
 }
 
+
 resource "aws_iam_role" "serverlessFullstack-api-lambdaRole" {
   name = "serverlessFullstack-api-lambdaRole"
 
@@ -108,10 +109,24 @@ resource "aws_lambda_function" "serverlessFullstack-api-lambdaFunc" {
 
   runtime = "nodejs14.x"
   handler = "app.handler"
+  depends_on = [aws_dynamodb_table.serverlessFullstack-api-DynamoDB]
+
+  environment {
+    variables = {
+      db         = aws_dynamodb_table.serverlessFullstack-api-DynamoDB.name
+      dbIndex1   = "gs1"
+      tokenSecret = random_password.lambdaTokenSecret.result
+    }
+  }
 
   # source_code_hash = data.archive_file.serverless_lambda.output_base64sha256
 
   role = aws_iam_role.serverlessFullstack-api-lambdaRole.arn
+}
+
+resource "random_password" "lambdaTokenSecret" {
+  length  = 64
+  special = false
 }
 
 resource "aws_cloudwatch_log_group" "serverlessFullstack-api-lambdaFunc" {
@@ -163,7 +178,7 @@ resource "aws_apigatewayv2_integration" "serverlessFullstack-api-gateway-lambdaI
   integration_uri      = aws_lambda_function.serverlessFullstack-api-lambdaFunc.invoke_arn
   integration_method   = "POST"
   payload_format_version = "2.0"
-  passthrough_behavior = "WHEN_NO_MATCH"
+  passthrough_behavior = "NEVER"
 }
 
 resource "aws_apigatewayv2_route" "serverlessFullstack-api-gateway-route" {
@@ -192,4 +207,9 @@ output "db_table" {
 output "db_table_index" {
   # value = "{'name': 'gs1','hash_key' : 'sk2','range_key': 'sk','projection_type': 'ALL'}"
   value = "gs1"
+}
+
+output "token_secret" {
+  value = aws_lambda_function.serverlessFullstack-api-lambdaFunc.environment[0].variables.tokenSecret
+  sensitive = true
 }

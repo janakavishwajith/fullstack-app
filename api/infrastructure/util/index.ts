@@ -56,11 +56,6 @@ export const updateFrontendConfig = (apiEndpoint: string): void => {
 
 export const execCommand = async (command: string): Promise<void> => {
   const { stdout, stderr } = await exec(command)
-
-  // if(stderr) {
-  //   console.error(`CMD "${command}" ERROR:`, stderr)
-  //   throw new Error(stderr)
-  // }
 }
 
 export const execCommandOutput = async (command: string): Promise<string> => {
